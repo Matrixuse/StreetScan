@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: streetscan-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && python app.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: PORT
+        value: "10000"
+
+  - type: static
+    name: streetscan-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://streetscan-backend.onrender.com
