@@ -26,7 +26,14 @@ def create_app():
 
     db.init_app(app)
     jwt = JWTManager(app)
-    CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"], supports_credentials=True)
+    # Allow localhost for development and Render domains for production
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        os.getenv('FRONTEND_URL', ''),  # Set via Render env var
+    ]
+    allowed_origins = [origin for origin in allowed_origins if origin]  # Remove empty strings
+    CORS(app, origins=allowed_origins, supports_credentials=True)
 
     @app.route('/api/ping')
     def ping():

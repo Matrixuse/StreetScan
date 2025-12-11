@@ -1,6 +1,8 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 export default function Report(){
   const navigate = useNavigate()
   const currentUser = React.useMemo(()=>{
@@ -89,7 +91,7 @@ export default function Report(){
       formData.append('image', blob, 'image.jpg')
 
       // Call the /api/infer endpoint to classify the image
-      const inferenceResponse = await fetch('http://localhost:5000/api/infer', {
+      const inferenceResponse = await fetch(`${API_URL}/api/infer`, {
         method: 'POST',
         body: formData
       })
@@ -133,7 +135,7 @@ export default function Report(){
       navigate('/gallery')
     } catch (err) {
       console.error('Inference error:', err)
-      setError(`Error analyzing image: ${err.message}. Make sure the backend server is running on http://localhost:5000`)
+      setError(`Error analyzing image: ${err.message}. Make sure the backend server is running on ${API_URL}`)
       setIsValidating(false)
     }
   }
