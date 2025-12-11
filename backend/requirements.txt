@@ -1,0 +1,20 @@
+Flask>=2.3
+Flask-SQLAlchemy>=3.0
+Flask-JWT-Extended>=4.5
+passlib[bcrypt]>=1.7
+python-dotenv>=1.0
+Flask-Cors>=3.0
+
+# ML / CV (install matching CUDA build of torch manually if you want GPU support)
+torch>=2.0.0
+torchvision>=0.15.0
+Pillow>=9.0.0
+tqdm>=4.0
+# ultralytics is optional (YOLOv8) for segmentation training
+ultralytics>=8.0.0
+Flask>=2.3
+Flask-SQLAlchemy>=3.0
+Flask-JWT-Extended>=4.5
+passlib[bcrypt]>=1.7
+python-dotenv>=1.0
+Flask-Cors>=3.0
