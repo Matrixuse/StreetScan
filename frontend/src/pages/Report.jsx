@@ -26,6 +26,7 @@ export default function Report(){
   const [locError, setLocError] = React.useState('')
   const [isValidating, setIsValidating] = React.useState(false)
   const [inferenceResult, setInferenceResult] = React.useState(null)
+  const [validImage, setValidImage] = React.useState(null) // null=not-validated, true/false = result
 
   React.useEffect(()=>{
     if(file){
@@ -34,6 +35,46 @@ export default function Report(){
       reader.readAsDataURL(file)
     } else setPreview(null)
   },[file])
+
+  // Auto-validate preview when it becomes available
+  React.useEffect(()=>{
+    let cancelled = false
+    const validate = async () =>{
+      setInferenceResult(null)
+      setValidImage(null)
+      if(!preview) return
+      setIsValidating(true)
+      setError('')
+      try{
+        const resp = await fetch(preview)
+        const blob = await resp.blob()
+        const formData = new FormData()
+        formData.append('image', blob, 'image.jpg')
+        const inferenceResponse = await fetch(`${API_URL}/api/infer`, { method: 'POST', body: formData })
+        const result = await inferenceResponse.json()
+        if(cancelled) return
+        setInferenceResult(result)
+        if(!inferenceResponse.ok){
+          setError(`Model error: ${result.error || 'Unable to analyze image'}`)
+          setValidImage(false)
+        } else {
+          setValidImage(Boolean(result.pothole_present))
+          if(!result.pothole_present){
+            setError('Error:  Non-pothole image. Please upload an image of a pothole.')
+          }
+        }
+      }catch(err){
+        if(cancelled) return
+        console.error('Inference error:', err)
+        setError(`Error analyzing image: ${err.message}. Make sure the backend server is running on ${API_URL}`)
+        setValidImage(false)
+      }finally{
+        if(!cancelled) setIsValidating(false)
+      }
+    }
+    validate()
+    return ()=>{ cancelled = true }
+  },[preview])
 
   const handleFileChange = (e) => {
     setError('')
@@ -191,10 +232,16 @@ export default function Report(){
           <input className="w-full p-3 rounded bg-gray-900 text-white" placeholder="Nearby landmark" value={landmark} onChange={e=>setLandmark(e.target.value)} />
         </div>
         <div className="flex gap-3">
-          <button disabled={!currentUser || !!error || !file || isValidating} className={`px-4 py-2 rounded text-white ${(!currentUser || !!error || !file || isValidating) ? 'bg-gray-700/60 cursor-not-allowed' : 'bg-orange-600'}`}>
+          <button disabled={!currentUser || !!error || !file || isValidating || validImage !== true} className={`px-4 py-2 rounded text-white ${(!currentUser || !!error || !file || isValidating || validImage !== true) ? 'bg-gray-700/60 cursor-not-allowed' : 'bg-orange-600'}`}>
             {isValidating ? 'Checking...' : 'Upload'}
           </button>
-          <button type="button" onClick={()=>{setFile(null); setDescription(''); setAddress(''); setLandmark(''); setError(''); setInferenceResult(null)}} className="px-4 py-2 border rounded text-white">Reset</button>
+          <button type="button" onClick={()=>{setFile(null); setDescription(''); setAddress(''); setLandmark(''); setError(''); setInferenceResult(null); setValidImage(null)}} className="px-4 py-2 border rounded text-white">Reset</button>
+          <div className="flex items-center text-sm text-gray-300 ml-2">
+            {validImage === null && file && !isValidating && <span className="text-yellow-300">Awaiting model check...</span>}
+            {isValidating && <span className="text-yellow-300">Validating image...</span>}
+            {validImage === false && <span className="text-red-400">Image not validated as pothole</span>}
+            {validImage === true && <span className="text-green-400">Image validated as pothole</span>}
+          </div>
         </div>
         {inferenceResult && (
           <div className={`mt-4 p-4 rounded ${inferenceResult.pothole_present ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
